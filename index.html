@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Find the right AI customization: a prompt, skill, agent or subagent. Draft briefs, scope access and generate agent Markdown locally." />
+<title>Agent Lab</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A4%96%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="./styles.css" />
+<script src="./app.js" defer></script>
+</head>
+<body data-role="engineer" data-doc="agent">
+<header>
+  <h1><span class="logo" aria-hidden="true">&#x1F916;</span>Agent Lab</h1>
+  <p>A small idea, shaped into something useful.</p>
+  <div class="toolbar">
+    <button id="infoBtn" type="button" onclick="openAbout()" aria-label="About this app" aria-haspopup="dialog" title="About this app">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M12 16v-5"/><path d="M12 8h.01"/></svg>
+    </button>
+    <button id="themeBtn" onclick="toggleTheme()" aria-label="Dark theme" aria-pressed="false" title="Switch to dark theme">
+      <svg class="theme-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg>
+      <svg class="theme-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+    </button>
+    <nav aria-label="Sections"><a href="#custom">Explore</a><a href="#build">Create</a><a href="#setup">Setup</a></nav>
+    <div class="rolepick">
+      <span class="pick"><label for="userRole">I'm a</label>
+      <select id="userRole" onchange="setUserRole(this.value)">
+        <option value="developer">Developer</option>
+        <option value="qa">QA engineer</option>
+        <option value="business">Business analyst</option>
+        <option value="manager">Manager</option>
+      </select></span>
+      <span class="pick"><label for="userTool">I write with</label>
+      <select id="userTool" onchange="setTool(this.value,true)">
+        <option value="copilot">GitHub Copilot</option>
+        <option value="claude">Claude Code</option>
+        <option value="codex">OpenAI Codex</option>
+      </select></span>
+    </div>
+  </div>
+  <p class="vh" id="liveStatus" role="status"></p>
+</header>
+<main>
+  <noscript>This application requires JavaScript to generate previews. Enable JavaScript; no server or AI connection is needed.</noscript>
+  <div id="status" role="alert"></div>
+<section class="doc-section" id="custom">
+        <div class="card step0" id="stepZero" role="region" aria-labelledby="stepZeroTitle" hidden>
+          <h2 id="stepZeroTitle">New here?</h2>
+          <p>Agent Lab helps you choose what to build for your AI coding assistant - a prompt, skill, agent or subagent - and writes the files. No AI runs here.</p>
+          <div class="bform">
+            <div class="row2">
+              <div><label for="s0Role">I'm a</label>
+                <select id="s0Role">
+                  <option value="developer">Developer</option>
+                  <option value="qa">QA engineer</option>
+                  <option value="business">Business analyst</option>
+                  <option value="manager">Manager</option>
+                </select></div>
+              <div><label for="s0Band">Time in this role</label>
+                <select id="s0Band">
+                  <option value="">Choose…</option>
+                  <option value="lt2">Under 2 years</option>
+                  <option value="2to4">2 to under 4 years</option>
+                  <option value="4to7">4 to under 7 years</option>
+                  <option value="7plus">7 years or more</option>
+                </select></div>
+            </div>
+            <div><label for="s0Tool">I write with</label>
+              <select id="s0Tool">
+                <option value="copilot">GitHub Copilot</option>
+                <option value="claude">Claude Code</option>
+                <option value="codex">OpenAI Codex</option>
+              </select></div>
+            <label class="inline-check" for="s0Remember"><input type="checkbox" id="s0Remember" /><span>Remember on this browser only</span></label>
+          </div>
+          <div class="step0-actions">
+            <button class="primary" onclick="startStepZero()">Start</button>
+            <button onclick="closeStepZero()">Not now</button>
+          </div>
+        </div>
+        <ol class="journey" aria-label="Explore stages">
+          <li id="stageDescribe" aria-current="step"><span>1</span> Describe</li>
+          <li id="stageClarify"><span>2</span> Clarify</li>
+          <li id="stageReview"><span>3</span> Your next step</li>
+        </ol>
+        <div class="question-meta" id="questionMeta" aria-live="polite"></div>
+        <div class="workspace" id="questionWorkspace">
+          <div class="qlist" id="needQs">
+            <div class="q" id="q-pain">
+              <div class="qh"><span class="qn">1</span><label for="ndPain">What keeps costing you time?</label></div>
+              <p class="why">Start with one recurring task. A sentence or two is enough.</p>
+              <div class="qbody">
+                <textarea id="ndPain" placeholder="e.g. working out why an acceptance test failed" oninput="renderNeed()" aria-describedby="answerHint"></textarea>
+                <p class="muted" id="answerHint">Your answers stay in this browser tab. Nothing is submitted.</p>
+                <details class="help" id="ndExamples"><summary>Show me some examples</summary><div class="egs" id="ndEgs"></div></details>
+                <details class="help"><summary>Help me think it through</summary>
+                  <div class="think">
+                    <label for="ndThink">A place for your rough notes</label>
+                    <textarea id="ndThink" placeholder="Describe the frustrating part in your own words. These notes are not used automatically."></textarea>
+                    <div class="thinkbar"><button class="askbtn" id="ndAskBtn" onclick="copyThinkPrompt(this)">Copy a prompt for my assistant</button></div>
+                    <p class="muted">Paste it into your own assistant to help draft the answers. There is no AI running on this page.</p>
+                  </div>
+                  <button class="digbtn" id="ndDig" onclick="digDeeper()">Ask why</button>
+                  <div class="chain" id="ndChain" hidden></div>
+                </details>
+              </div>
+            </div>
+
+            <div class="q" id="q-when" hidden>
+              <div class="qh"><span class="qn">2</span><label for="ndWhen">When does it happen?</label></div>
+              <p class="why">The trigger. This becomes the moment the assistant should be useful.</p>
+              <div class="qbody"><input type="text" id="ndWhen" placeholder="e.g. a nightly acceptance run goes red" oninput="renderNeed()" /></div>
+            </div>
+
+            <div class="q" id="q-want" hidden>
+              <div class="qh"><span class="qn">3</span><label for="ndWant">What do you want to be able to do?</label></div>
+              <p class="why">Describe the capability, not the tool. "See X" and "know whether Y" are good shapes.</p>
+              <div class="qbody"><input type="text" id="ndWant" placeholder="e.g. see the build, the screenshot and the data together" oninput="renderNeed()" /></div>
+            </div>
+
+            <div class="q" id="q-decision" hidden>
+              <div class="qh"><span class="qn">4</span><label for="ndDecision">What will you <i>decide</i> with the answer?</label></div>
+              <p class="why">The most important question here. No decision means no agent - only a report nobody reads.</p>
+              <div class="qbody"><input type="text" id="ndDecision" placeholder="e.g. file a defect, fix the locator, or request a data correction" oninput="renderNeed()" /></div>
+            </div>
+
+            <div class="q" id="q-judge" hidden>
+              <div class="qh"><span class="qn">5</span><span id="judgeLabel" class="question-label">What does the job involve?</span></div>
+              <p class="why">Tick only what happens every time. Most requests need one or two.</p>
+              <div class="qbody"><div class="bchecks judge-checks" id="ndJudge" role="group" aria-labelledby="judgeLabel">
+                <label><input type="checkbox" value="agent" onchange="renderNeed()"/>Weigh evidence from several places, then conclude</label>
+                <label><input type="checkbox" value="sub" onchange="renderNeed()"/>Go and fetch one specific thing, then report it</label>
+                <label><input type="checkbox" value="skill" onchange="renderNeed()"/>Follow the same fixed steps every time, in order</label>
+                <label><input type="checkbox" value="prompt" onchange="renderNeed()"/>Send the same request I keep retyping</label>
+              </div></div>
+            </div>
+
+            <div class="q" id="q-systems" hidden>
+              <div class="qh"><span class="qn">6</span><span id="systemsLabel" class="question-label">Where does the answer live today?</span></div>
+              <p class="why">Tick the tools you'd open by hand to find it - most answers need 2 to 4. If nothing applies, there's no evidence to work from.</p>
+              <p class="why">Also tick <b>via MCP</b> if your AI tool can already open that tool itself. Not sure? Leave it: the files will ask you for the data.</p>
+              <details class="help"><summary>What does via MCP change?</summary>
+                <p>Without MCP, the files say your team uses the tool and ask you to paste what's needed. With MCP, the assistant may read the tool itself - read first, and ask before any change. Readers (small read-only helpers) are suggested only for tools ticked via MCP. This page never connects to anything.</p>
+              </details>
+              <div class="qbody"><div class="catalog" id="ndSystems" role="group" aria-labelledby="systemsLabel"></div>
+                <p class="cat-summary" id="ndCatSummary"></p></div>
+            </div>
+
+            <div class="q" id="q-freq" hidden>
+              <div class="qh"><span class="qn">7</span><label for="ndFreq">How often does this come up?</label></div>
+              <p class="why">Rare work is better served by a written guide that nobody has to maintain.</p>
+              <div class="qbody"><select id="ndFreq" onchange="renderNeed()">
+                <option value="">- choose one -</option>
+                <option value="high">Several times a week</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="rare">Rarely - a few times a year</option>
+              </select></div>
+            </div>
+
+            <div class="q" id="q-test" hidden>
+              <div class="qh"><span class="qn">8</span><label for="ndTest">A past case where you already know the right answer</label></div>
+              <p class="why">Without one you can't tell whether it works - only whether it sounds convincing.</p>
+              <div class="qbody"><input type="text" id="ndTest" placeholder="e.g. last Tuesday's failure in the smoke suite" oninput="renderNeed()" /></div>
+            </div>
+          </div>
+          <p id="questionError" role="alert"></p>
+          <div class="wizard-actions">
+            <button id="needBack" onclick="moveNeed(-1)">Back</button>
+            <button class="skip" id="needSkip" onclick="moveNeed(1,true)">Skip for now</button>
+            <button class="primary" id="needNext" onclick="moveNeed(1)">Continue &#8594;</button>
+          </div>
+          <button id="returnToSummary" class="return-summary" onclick="showNeedQuestion(8)" hidden>Back to recommendation</button>
+        </div>
+
+        <div id="needResult" class="workspace" hidden>
+          <h2 tabindex="-1" id="resultHeading">Your next step</h2>
+          <p class="lead">A recommendation based on your answers, not an AI prediction.</p>
+            <div class="verdict" id="ndVerdict"></div>
+            <label class="inline-check smallest" id="ndSmallestRow" for="ndSmallest" hidden><input type="checkbox" id="ndSmallest" onchange="smallestChanged()" /><span>Smallest version first <span class="muted">(one agent opens the MCP tools directly; add readers once it works)</span></span></label>
+            <div class="plan-box" id="ndPlanBox" hidden>
+              <h3 id="plTitle">Build plan</h3>
+              <div class="plan-name"><label for="planName">Name for what you are building</label>
+                <input type="text" id="planName" placeholder="e.g. Test Failure Analyst" oninput="renderNeed()" /></div>
+              <ol class="plan" id="ndPlan"></ol>
+              <div class="cfgh">
+                <b>Download</b> <span class="muted" id="plHint"></span>
+                <div class="cfgbtns">
+                  <button id="plCopyBtn" title="Copy" aria-label="Copy" onclick="copyText(document.getElementById('plOut').textContent,this)">Copy</button>
+                  <button id="plDlBtn" title="Download" aria-label="Download" onclick="downloadText(planFilename(), document.getElementById('plOut').textContent, 'text/markdown')">Download</button>
+                </div>
+              </div>
+              <details class="preview"><summary>Preview</summary><pre data-nocopy><code id="plOut"></code></pre></details>
+              <details class="preview" id="plScripts"><summary id="plScriptsTitle">Create all files with one command</summary>
+                <p class="muted">Run it from the root of your repository. Files that already exist are skipped, never overwritten.</p>
+                <div class="cfgh cmd-head"><b>Windows PowerShell</b>
+                  <div class="cfgbtns"><button title="Copy" aria-label="Copy the PowerShell command" onclick="copyText(document.getElementById('plPs').textContent,this)">Copy</button></div></div>
+                <pre><code id="plPs"></code></pre>
+                <div class="cfgh cmd-head"><b>macOS or Linux</b>
+                  <div class="cfgbtns"><button title="Copy" aria-label="Copy the macOS or Linux command" onclick="copyText(document.getElementById('plSh').textContent,this)">Copy</button></div></div>
+                <pre><code id="plSh"></code></pre>
+              </details>
+            </div>
+            <div class="verdict-next" id="ndNext"></div>
+            <div class="mentor-offer" id="ndMentor" hidden>
+              <p><b>Want <span data-tool-short>Copilot</span> to coach you while you build this?</b> Set up the Mentor in about 5 minutes.<span class="nontech"> It needs <span data-tool-label>GitHub Copilot</span> on your computer.</span></p>
+              <button type="button" onclick="go('setup')">Set up the Mentor</button>
+            </div>
+            <details class="answer-review"><summary>Your answers <span class="muted" id="ndPct">0 of 8 answered</span></summary>
+              <div class="bar"><i id="ndBar" style="width:0%"></i></div>
+              <ul class="miss" id="ndMiss"></ul>
+            </details>
+            <details class="help"><summary>What's the difference between a prompt, skill and agent?</summary>
+              <table>
+          <thead><tr><th>Build a…</th><th>When</th><th>Lives in</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><b>Prompt</b></td><td>You repeat the <i>same request</i> and just want a shortcut to type</td><td><code id="livesPrompt">.github/skills/&lt;name&gt;/SKILL.md</code>, run only when you type it</td><td><code id="egPrompt">/release-readiness</code></td></tr>
+            <tr><td><b>Skill</b></td><td>A <i>procedure</i> several agents should follow identically</td><td><code id="livesSkill">.github/skills/&lt;name&gt;/SKILL.md</code></td><td><code>a documented approval procedure</code></td></tr>
+            <tr><td><b>Agent</b></td><td>An ongoing <i>role</i> with judgement, bounded reach, and a report</td><td><code id="livesAgent">.github/agents/*.agent.md</code></td><td>QA Failure Analyst</td></tr>
+            <tr><td><b>Subagent</b></td><td>A narrow, repeated <i>lookup</i> that would otherwise flood the conversation</td><td><code id="livesSub">.github/agents/*.agent.md</code></td><td>Build Evidence Reader</td></tr>
+          </tbody>
+              </table>
+              <p class="muted" id="toolHelpNote">The same files work in VS Code and in IntelliJ with the GitHub Copilot plugin. Prompts are written as skills because VS Code is phasing out <code>.prompt.md</code> files in favour of skills. A bigger request can need several of these: tick every part in question 5 and you get a build plan.</p>
+            </details>
+            <button class="back-to-answers" onclick="showNeedQuestion(7)">&#8592; Back to questions</button>
+        </div>
+      </section>
+
+      <!-- ===== CUSTOM AGENTS · BUILD ===== -->
+      <section class="doc-section" id="build">
+        <h2>Create</h2>
+        <p class="lead">Finish what Explore recommended, then copy or download the result.</p>
+        <p class="backlink"><a href="#" onclick="go('custom');return false;">&#8592; Back to Explore</a></p>
+        <fieldset class="make-choice" id="makeChoice">
+          <legend>What do you want to make?</legend>
+          <label class="make-card" for="makeAgent"><input type="radio" name="makeDoc" id="makeAgent" value="agent" checked onchange="chooseDocument(this.value)" /><span><b>Files for <span data-tool-label>GitHub Copilot</span></b><span class="muted" id="makeAgentDesc">The agent, subagents, skills and prompts to save in your repository.</span></span></label>
+          <label class="make-card" for="makeBrief"><input type="radio" name="makeDoc" id="makeBrief" value="brief" onchange="chooseDocument(this.value)" /><span><b>A brief for the builder</b><span class="muted">A document that explains the need to the engineer who will build it. Usually written by a business analyst.</span></span></label>
+          <label class="make-card" for="makeApproval"><input type="radio" name="makeDoc" id="makeApproval" value="approval" onchange="chooseDocument(this.value)" /><span><b>An approval record</b><span class="muted">A decision record: the four checks, the access granted, the owner and the cost. Usually written by a manager.</span></span></label>
+        </fieldset>
+        <div class="callout source-strip" id="createSource" role="status"></div>
+
+        <!-- ============ BUSINESS WALKTHROUGH ============ -->
+        <div class="biz">
+          <details class="walkthrough"><summary>How to write a useful brief</summary>
+          <h3>Your Walkthrough · Describe It, Don't Build It</h3>
+          <p>You don't need to write a file. Your job is to describe the need precisely enough that an engineer can build it in an afternoon - and to be the person who says whether the result is actually useful.</p>
+
+          <h4>1 · Say it out loud</h4>
+          <p>Use the sentence from Step 0. A real one sounds like this:</p>
+          <pre data-nocopy><code>When a customer reports that a statement looks wrong,
+I want to see what the system actually did for that account,
+so I can tell the customer whether it's a defect or expected behaviour.</code></pre>
+
+          <h4>2 · Answer the five questions an engineer will ask</h4>
+          <table>
+            <tr><th>They'll ask</th><th>You answer with</th></tr>
+            <tr><td>"Where does the answer live today?"</td><td>The systems you'd open by hand - the ticket, the report, the log.</td></tr>
+            <tr><td>"How do you know when it's right?"</td><td>One past example where you already know the correct answer.</td></tr>
+            <tr><td>"What must it never do?"</td><td>e.g. "never change the ticket", "never show account numbers".</td></tr>
+            <tr><td>"Who reads the output?"</td><td>You, a customer, an auditor - this decides the wording and detail.</td></tr>
+            <tr><td>"What does good output look like?"</td><td>Sketch it. Even a bullet list on paper is enough.</td></tr>
+          </table>
+
+          <h4>3 · Insist on the safety line</h4>
+          <p>Ask for read-only behaviour explicitly, and require human approval before changes. These are instructions only: enforce access with tool restrictions and read-only credentials in the host application.</p>
+
+          <h4>4 · Judge the first version honestly</h4>
+          <ul>
+            <li>Run it on a case where you <b>already know the answer</b>. Did it agree?</li>
+            <li>Did it show you <i>where</i> each fact came from, or just assert things?</li>
+            <li>Was anything confidently wrong? That's the one thing to report back - it usually means the agent was allowed to guess where it should have said "I don't know".</li>
+          </ul>
+          <div class="callout tip">A good agent tells you what it <i>observed</i> and separately what it <i>concluded</i>. If you can't tell those apart in the output, send it back.</div>
+
+          </details>
+          <h3>Handoff Brief Builder</h3>
+          <p>Fill this in and it writes the brief for you. Send the result to whoever will build it - it answers every question they'd otherwise have to chase you for. Nothing leaves your browser.</p>
+          <div class="card">
+            <div class="bform">
+              <div class="row2">
+                <div><label for="brTitle">What would you call this assistant?</label>
+                  <input type="text" id="brTitle" value="Statement Query Explainer" placeholder="e.g. Statement Query Explainer" oninput="renderBrief()" /></div>
+                <div><label for="brWho">Your name / team</label>
+                  <input type="text" id="brWho" value="" placeholder="e.g. Client Services" oninput="renderBrief()" /></div>
+              </div>
+              <div><label for="brWhen">When this happens…</label>
+                <input type="text" id="brWhen" value="a customer reports that a statement looks wrong" oninput="renderBrief()" /></div>
+              <div><label for="brWant">…I want to…</label>
+                <input type="text" id="brWant" value="see what the system actually did for that account" oninput="renderBrief()" /></div>
+              <div><label for="brSo">…so I can…</label>
+                <input type="text" id="brSo" value="tell the customer whether it's a defect or expected behaviour" oninput="renderBrief()" /></div>
+              <details class="advanced"><summary>Sources, audience and safeguards<span id="brAdvCount"></span></summary>
+              <div class="advanced-fields">
+              <div><label for="brDecision">What will someone <i>do</i> with the answer? <span class="muted">(if this is blank, it's not an agent yet)</span></label>
+                <input type="text" id="brDecision" value="Reply to the customer, or raise a defect" oninput="renderBrief()" /></div>
+              <fieldset class="catalog-box"><legend>Where do you look for this today?</legend>
+                <p class="muted">Tick the tools you open by hand. Tick via MCP only if you know the AI tool can already reach it; if you're not sure, the brief asks the builder to check.</p>
+                <div class="catalog" id="brSystems"></div></fieldset>
+              <div class="row2">
+                <div><label for="brReader">Who reads the output?</label>
+                  <input type="text" id="brReader" value="Me, then possibly the customer" placeholder="e.g. me, then possibly the customer" oninput="renderBrief()" /></div>
+                <div><label for="brFreq">How often does this come up?</label>
+                  <select id="brFreq" onchange="renderBrief()">
+                    <option>Several times a week</option><option>Weekly</option>
+                    <option>Monthly</option><option>Rarely - a few times a year</option>
+                  </select></div>
+              </div>
+              <div><label for="brNever">It must never… <span class="muted">(one per line)</span></label>
+                <textarea id="brNever" oninput="renderBrief()">Change or comment on the ticket
+Show full account numbers or balances</textarea></div>
+              <div><label for="brOutput">What should good output look like?</label>
+                <textarea id="brOutput" placeholder="e.g. a short timeline where each line says where the fact came from, and a plain verdict" oninput="renderBrief()">A short timeline of what happened to the account, each line saying where the fact came from, and a plain verdict: expected or not.</textarea></div>
+              <div><label for="brTest">A past case where you already know the right answer <span class="muted">(this is how we test it)</span></label>
+                <input type="text" id="brTest" value="" placeholder="e.g. the query raised last month for account ending 4417" oninput="renderBrief()" /></div>
+              </div>
+              </details>
+              <div id="brPlanRow" hidden><label class="inline-check" for="brIncludePlan"><input type="checkbox" id="brIncludePlan" onchange="renderBrief()" /><span>Include the build plan from Explore <span class="muted">(every piece, with its starter file)</span></span></label></div>
+            </div>
+            <div class="cfgh" style="margin-top:14px">
+              <b>Your brief</b> <span class="muted">hand this to whoever builds it</span>
+              <div class="cfgbtns">
+                <button id="brCopyBtn" title="Copy" aria-label="Copy" onclick="copyText(document.getElementById('brOut').textContent,this)"></button>
+                <button id="brDlBtn" title="Download" aria-label="Download" onclick="downloadText('agent-brief.md', document.getElementById('brOut').textContent, 'text/markdown')"></button>
+              </div>
+            </div>
+            <details class="preview"><summary>Preview generated Markdown</summary><pre data-nocopy><code id="brOut"></code></pre></details>
+          </div>
+          <div class="callout"><b>If the frequency is "rarely"</b>, say so honestly in the brief - a one-page written guide is often the better answer, and nobody has to maintain it.</div>
+        </div>
+
+        <!-- ============ MANAGER WALKTHROUGH ============ -->
+        <div class="mgr">
+          <details class="walkthrough"><summary>Guidance for scoping and approval</summary>
+          <h3>Your Walkthrough · Decide, Scope, Then Approve</h3>
+          <p>You rarely write the agent. You decide whether it should exist, how far it may reach, what it costs to run, and who owns it afterwards.</p>
+
+          <h4>1 · Should this be an agent at all?</h4>
+          <p>Run the request through Step 0 with the requester. Approve when <b>all four</b> hold:</p>
+          <table>
+            <tr><td><b>Repeated</b></td><td>The task happens at least weekly, by more than one person.</td></tr>
+            <tr><td><b>Evidence-bound</b></td><td>The answer exists in systems we already connect - not in someone's head.</td></tr>
+            <tr><td><b>Decision-linked</b></td><td>Someone acts on the output. No decision, no agent.</td></tr>
+            <tr><td><b>Checkable</b></td><td>There's a past case where we know the right answer, to test against.</td></tr>
+          </table>
+
+          <h4>2 · Scope the reach - least privilege</h4>
+          <p>Grant an agent only the specific tools it needs. Grant the minimum that answers the question, and remember reach is inherited: if an agent may delegate to a worker, it effectively reaches that worker's systems too.</p>
+          <ul>
+            <li><b>Read-only by default</b> - configure read-only credentials and deny write tools in the host; prose alone does not deny access.</li>
+            <li><b>Approval is human</b> - use an explicit approval mechanism for material changes; writing a request is not an approval control.</li>
+            <li><b>Production is special</b> - production builds, databases and infrastructure changes deserve a named owner, not general access.</li>
+            <li><b>Redaction is a rule, not a hope</b> - define and verify redaction of secrets, tokens and personal data; do not assume automatic filtering.</li>
+          </ul>
+
+          <h4>3 · Control the cost</h4>
+          <p>Delegation is the cost lever. A coordinator on a strong model that reads every log itself is the expensive pattern; a coordinator that delegates lookups to cheap, fast workers is not.</p>
+          <table>
+            <tr><th>Piece</th><th>Model</th><th>Why</th></tr>
+            <tr><td>Narrow lookup worker</td><td>Fast / low-cost</td><td>Extraction and summarising - little judgement needed.</td></tr>
+            <tr><td>Coordinator / role agent</td><td>Stronger</td><td>Holds the hypothesis and weighs contradictory evidence.</td></tr>
+          </table>
+          <p class="muted">Model availability, delegation behaviour and cost depend on your host and subscription. Check its current settings and documentation.</p>
+
+          <h4>4 · Roll it out and keep it honest</h4>
+          <ol>
+            <li><b>Pilot</b> with the requester on known-answer cases for a week.</li>
+            <li><b>Review the output shape</b> - it should use a shared template so reports are comparable.</li>
+            <li><b>Share with the team</b> through a reviewed repository, so everyone runs the same vetted version rather than private copies.</li>
+            <li><b>Name an owner</b> - agents drift when the systems behind them change.</li>
+            <li><b>Retire</b> anything unused after a quarter. A stale agent that sounds confident is worse than none.</li>
+          </ol>
+          <div class="callout"><b>Governance in one line:</b> keep reviewed definitions in version control, with a named owner and a review date, rather than relying on private chat copies.</div>
+
+          </details>
+          <h3>Scoping &amp; Approval Record</h3>
+          <p>Fill this in during the approval conversation and it writes the decision record - the four gates, the exact reach you granted, the cost tier, and who owns it. Attach it to the ticket or paste it into the pull request that adds the agent. Nothing leaves your browser.</p>
+          <p class="muted">The example is a <b>Release Readiness Reporter</b>: release scope from an issue tracker, merged changes from version control, build results from CI and test execution evidence. Replace the examples with the systems you actually use.</p>
+          <div class="card">
+            <div class="bform">
+              <div class="row2">
+                <div><label for="scName">Agent name</label>
+                  <input type="text" id="scName" value="Release Readiness Reporter" placeholder="e.g. Release Readiness Reporter" oninput="renderScope()" /></div>
+                <div><label for="scOwner">Owner <span class="muted">(a person, not a team)</span></label>
+                  <input type="text" id="scOwner" value="" placeholder="e.g. Alex Smith" oninput="renderScope()" /></div>
+              </div>
+              <div class="row2">
+                <div><label for="scRequester">Requested by</label>
+                  <input type="text" id="scRequester" value="" placeholder="e.g. delivery / release chapter" oninput="renderScope()" /></div>
+                <div><label for="scReview">Review date</label>
+                  <input type="text" id="scReview" value="" placeholder="e.g. end of next quarter" oninput="renderScope()" /></div>
+              </div>
+              <details class="advanced"><summary>Approval gates, reach and safety<span id="scAdvCount"></span></summary>
+              <div class="advanced-fields">
+              <div><label>Approval gates <span class="muted">(approve only when all four hold)</span></label>
+                <div class="bchecks" id="scGates">
+                  <label><input type="checkbox" value="Repeated - happens weekly or more, by more than one person" checked onchange="renderScope()"/>Repeated</label>
+                  <label><input type="checkbox" value="Evidence-bound - the answer lives in tools, not in someone's head" checked onchange="renderScope()"/>Evidence-bound</label>
+                  <label><input type="checkbox" value="Decision-linked - someone acts on the output" checked onchange="renderScope()"/>Decision-linked</label>
+                  <label><input type="checkbox" value="Checkable - a past case exists to test against" checked onchange="renderScope()"/>Checkable</label>
+                </div></div>
+              <fieldset class="catalog-box"><legend>Tools and access</legend>
+                <p class="muted">Ticked: the agent knows the team uses it - context only, no access. With via MCP: access is granted through that MCP server. Grant the least that answers the brief.</p>
+                <div class="catalog" id="scSystems"></div></fieldset>
+              <div class="cat-ids" id="scIds" hidden>
+                <h4>MCP servers granted</h4>
+                <p class="muted">The server's name in your AI tool's MCP settings. A change here applies to every file on this page.</p>
+                <div id="scIdsList"></div></div>
+              <div><label id="scSubsLabel">May delegate to <span class="muted">(reach is inherited - a reader reaches its tool too)</span></label>
+                <div class="bchecks" id="scSubs" role="group" aria-labelledby="scSubsLabel"></div></div>
+              <div class="row2">
+                <div><label for="scWrite">Write access</label>
+                  <select id="scWrite" onchange="renderScope()">
+                    <option value="none">Read-only requested (enforce in the host)</option>
+                    <option value="allowlist">Allowlist - named write tools only</option>
+                    <option value="allow">Full write - every mutating tool permitted</option>
+                  </select></div>
+                <div><label for="scModel">Model tier</label>
+                  <select id="scModel" onchange="renderScope()">
+                    <option value="inherit">Inherit - the person's current model</option>
+                    <option value="fast">Fast (low cost)</option>
+                    <option value="strong">Strong</option>
+                  </select></div>
+              </div>
+              <div><label for="scWriteList">If allowlisted, which write tools - and who approves each use?</label>
+                <input type="text" id="scWriteList" value="" placeholder="e.g. jira_add_comment on the release ticket - approved per use by the owner" oninput="renderScope()" /></div>
+              </div>
+              </details>
+              <div><label for="scDecision">Decision</label>
+                <select id="scDecision" onchange="renderScope()">
+                  <option value="Pilot">Pilot - one team, one week, known-answer cases</option>
+                  <option value="Approved">Approved - install for the team</option>
+                  <option value="Declined">Declined</option>
+                </select></div>
+              <div><label for="scNotes">Conditions / notes</label>
+                <textarea id="scNotes" oninput="renderScope()">Read-only for the pilot - it reports the picture, it does not transition Jira issues or trigger builds.
+If the summary is useful, revisit whether it may post to the release ticket.</textarea></div>
+            </div>
+            <div class="cfgh" style="margin-top:14px">
+              <b>Decision record</b> <span class="muted">attach to the ticket or the PR</span>
+              <div class="cfgbtns">
+                <button id="scCopyBtn" title="Copy" aria-label="Copy" onclick="copyText(document.getElementById('scOut').textContent,this)"></button>
+                <button id="scDlBtn" title="Download" aria-label="Download" onclick="downloadText('agent-approval.md', document.getElementById('scOut').textContent, 'text/markdown')"></button>
+              </div>
+            </div>
+            <details class="preview"><summary>Preview generated Markdown</summary><pre data-nocopy><code id="scOut"></code></pre></details>
+          </div>
+        </div>
+
+        <!-- ============ ENGINEER WALKTHROUGH ============ -->
+        <div class="eng">
+          <details class="walkthrough"><summary>How to build and test an agent</summary>
+          <h3>Your Walkthrough · Build, Review, Test</h3>
+          <ol>
+            <li>Describe the trigger, the decision and a known-answer test case.</li>
+            <li>Grant only the tools and delegates the agent needs. Tick MCP only for the tools it must reach; each MCP server and the service behind it decide what each person may do.</li>
+            <li>State the procedure, boundaries, expected output and what to do when evidence is missing.</li>
+            <li>Review the generated file, then save it in <code id="egAgentDir">.github/agents/</code> in your workspace.</li>
+            <li>Test a known case, a missing-evidence case and a forbidden-action request before sharing it.</li>
+          </ol>
+          <div class="callout"><b>Instructions are not enforcement.</b> Tool allowlists, read-only credentials and human approvals must be configured in your assistant, in your MCP servers and in the connected services. This site does not install agents, connect to MCP servers or run AI.</div>
+          <p>Need a prompt or a skill, or several pieces at once? Explore recommends the shape and gives you a build plan with a starter file for each piece, including <code>SKILL.md</code> files. Prompts are written as skills that run only when you type their command.</p>
+          </details>
+          <div class="pieces-box" id="crPiecesBox" hidden>
+            <h3>Your files</h3>
+            <p class="muted">Choose a file to review or change it. Changes here also update the build plan in Explore.</p>
+            <ol class="pick-list" id="crPieces"></ol>
+          </div>
+          <div class="card starter-panel" id="crStarter" hidden>
+            <div class="cfgh"><b id="crStarterTitle">Skill</b> <span class="muted"><code id="crStarterPath"></code></span>
+              <div class="cfgbtns">
+                <button title="Copy" aria-label="Copy the starter file" onclick="copyStarter(this)">Copy</button>
+                <button title="Download" aria-label="Download the starter file" onclick="downloadStarter()">Download</button>
+              </div></div>
+            <p class="muted" id="crStarterNote"></p>
+            <pre data-nocopy><code id="crStarterOut"></code></pre>
+            <div id="crStarterExtra" hidden>
+              <div class="cfgh"><b>Second file</b> <span class="muted"><code id="crStarterExtraPath"></code></span>
+                <div class="cfgbtns">
+                  <button title="Copy" aria-label="Copy the second file" onclick="copyStarterExtra(this)">Copy</button>
+                  <button title="Download" aria-label="Download the second file" onclick="downloadStarterExtra()">Download</button>
+                </div></div>
+              <p class="muted">Codex keeps the prompt out of automatic use with this file. Save it next to the skill, in the folder shown.</p>
+              <pre data-nocopy><code id="crStarterExtraOut"></code></pre>
+            </div>
+          </div>
+          <div id="agBuilder">
+          <h3 id="agentBuilderTitle">Agent Builder</h3>
+          <p>Fill this in and it writes the file for you - the same shape the walkthrough describes. Nothing leaves your browser.</p>
+          <div class="card">
+            <div class="bform">
+              <div class="row2">
+                <div><label for="agName">Display name</label>
+                  <input type="text" id="agName" value="QA Failure Analyst" oninput="renderAgent()" /></div>
+                <div><label for="agFile">File name</label>
+                  <input type="text" id="agFile" value="qa-failure-analyst" pattern="[a-zA-Z0-9][a-zA-Z0-9_-]*" aria-describedby="filenameHelp" oninput="renderAgent()" /></div>
+              </div>
+              <p class="muted" id="filenameHelp">File name: letters, digits, hyphens and underscores only (no extension).</p>
+              <div><label for="agDesc">Description - write <i>when to use me</i>, this is the routing signal</label>
+                <textarea id="agDesc" oninput="renderAgent()">Use for acceptance-test failures: correlates build evidence, screenshots, DOM state, and test data to classify the failure.</textarea></div>
+              <div><label for="agHint">Input it needs</label>
+                <input type="text" id="agHint" value="Build URL, test class/method, or environment" oninput="renderAgent()" /></div>
+              <div id="agAdaptRow"><label class="inline-check" for="agAdapt"><input type="checkbox" id="agAdapt" checked onchange="renderAgent()" /><span>Adapt explanations to each person's experience <span class="muted">(uses their Setup profile and progress if they have them; otherwise answers normally)</span></span></label></div>
+              <p class="muted" id="agSkillNote" hidden></p>
+              <p class="muted" id="agReach"></p>
+              <details class="advanced"><summary>Tools, delegates and model (advanced)</summary>
+              <div class="advanced-fields">
+              <fieldset class="catalog-box"><legend>Tools</legend>
+                <p class="muted">Tick what the team uses. Tick via MCP for each tool this agent may open itself; without MCP the file tells it to ask the user.</p>
+                <div class="catalog" id="agSystems"></div></fieldset>
+              <div class="cat-ids" id="agIds" hidden>
+                <h4>MCP server IDs</h4>
+                <p class="muted">The server's name in your AI tool's MCP settings. A change here applies to every file on this page.</p>
+                <div id="agIdsList"></div></div>
+              <div id="agSubsRow"><label id="agSubsLabel">Readers <span class="muted">(read-only subagents. They must already exist - Explore's build plan writes them)</span></label>
+                <div class="bchecks" id="agSubs" role="group" aria-labelledby="agSubsLabel"></div></div>
+              <div id="agCustomSubsRow"><label for="agCustomSubs">Your other subagents <span class="muted">(one exact name per line)</span></label>
+                <textarea id="agCustomSubs" placeholder="e.g. My Build Reader" oninput="renderAgent()"></textarea></div>
+              <p class="muted" id="agDelegateNote" hidden></p>
+              <div class="row2">
+                <div><label for="agKind">Kind</label>
+                  <select id="agKind" onchange="renderAgent()">
+                    <option value="agent">Agent - appears in the agents list</option>
+                    <option value="worker">Subagent - hidden; other agents call it</option>
+                  </select></div>
+                <div><label for="agTier">Model</label>
+                  <select id="agTier" aria-describedby="agModelOut" onchange="renderAgent()">
+                    <option value="inherit">Inherit - the person's current model</option>
+                    <option value="fast">Fast (low cost)</option>
+                    <option value="strong">Strong</option>
+                  </select></div>
+              </div>
+              <div><label for="agModel">Exact model ID <span class="muted">(optional)</span></label>
+                <input type="text" id="agModel" aria-describedby="agModelHelp agModelOut" oninput="renderAgent()" />
+                <p class="muted" id="agModelHelp">Overrides the level. Copy the ID exactly as your assistant's model picker shows it.</p>
+                <p class="model-out" id="agModelOut" aria-live="polite"></p></div>
+              </div>
+              </details>
+              <div><label for="agRules">Boundaries - one prohibition per line</label>
+                <textarea id="agRules" oninput="renderAgent()">Default to read-only investigation.
+Never re-run a build or submit a browser action without explicit approval.
+Never execute unreviewed code.
+Never output secrets, PII, account numbers, or balances.</textarea></div>
+            </div>
+            <div class="cfgh" style="margin-top:14px">
+              <b>Generated</b> <span class="muted" id="agPath">.github/agents/qa-failure-analyst.agent.md</span>
+              <div class="cfgbtns">
+                <button id="agCopyBtn" title="Copy" aria-label="Copy" onclick="copyText(document.getElementById('agOut').textContent,this)"></button>
+                <button id="agDlBtn" title="Download" aria-label="Download" onclick="downloadText(agentFilename(), document.getElementById('agOut').textContent, 'text/markdown')"></button>
+              </div>
+            </div>
+            <details class="preview"><summary id="agPreviewTitle">Preview generated Markdown</summary><pre data-nocopy><code id="agOut"></code></pre></details>
+          </div>
+          <div class="callout tip" id="agSaveTip">Save the reviewed file in <code>.github/agents/</code>. MCP server IDs and delegate names must match your own setup. This application does not provide those services.</div>
+          </div>
+          <div class="all-files" id="crAllBox" hidden>
+            <div class="cfgh"><b>All files</b> <span class="muted">the build plan, with every starter file</span>
+              <div class="cfgbtns"><button id="crPlanDl" title="Download" aria-label="Download the build plan" onclick="downloadCreatePlan()">Download</button></div></div>
+            <details class="preview" id="crScripts"><summary id="crScriptsTitle">Create all files with one command</summary>
+              <p class="muted">Run it from the root of your repository. Files that already exist are skipped, never overwritten.</p>
+              <div class="cfgh cmd-head"><b>Windows PowerShell</b>
+                <div class="cfgbtns"><button title="Copy" aria-label="Copy the PowerShell command for all files" onclick="copyText(document.getElementById('crPs').textContent,this)">Copy</button></div></div>
+              <pre><code id="crPs"></code></pre>
+              <div class="cfgh cmd-head"><b>macOS or Linux</b>
+                <div class="cfgbtns"><button title="Copy" aria-label="Copy the macOS or Linux command for all files" onclick="copyText(document.getElementById('crSh').textContent,this)">Copy</button></div></div>
+              <pre><code id="crSh"></code></pre>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SETUP · MENTOR PROFILE ===== -->
+      <section class="doc-section" id="setup">
+        <h2>Setup</h2>
+        <p class="lead">Make <span data-tool-label>GitHub Copilot</span> coach you at your level. This page has no AI: it writes two files for your assistant. The Mentor, and every agent, skill and prompt made in Explore and Create, read your profile. About 2 minutes for your profile, and about 5 more to install.</p>
+
+        <div class="card">
+          <h3 class="card-title">1 · Your profile</h3>
+          <div class="bform">
+            <div class="row2">
+              <div><label for="suRole">Your role</label>
+                <select id="suRole" onchange="setUserRole(this.value)">
+                  <option value="developer">Developer</option>
+                  <option value="qa">QA engineer</option>
+                  <option value="business">Business analyst</option>
+                  <option value="manager">Manager</option>
+                </select></div>
+              <div><label for="suBand">Time in this role</label>
+                <select id="suBand" aria-describedby="suLevel" onchange="setupBandChanged()">
+                  <option value="">Choose…</option>
+                  <option value="lt2">Under 2 years</option>
+                  <option value="2to4">2 to under 4 years</option>
+                  <option value="4to7">4 to under 7 years</option>
+                  <option value="7plus">7 years or more</option>
+                </select>
+                <p class="level-note" id="suLevel" aria-live="polite"></p></div>
+            </div>
+            <div class="row2">
+              <div><label for="suMode">How should the assistant work with you?</label>
+                <select id="suMode" onchange="renderSetup()">
+                  <option value="auto">Recommended for my level</option>
+                  <option value="guided">Guided - questions and hints before solutions</option>
+                  <option value="collaborative">Collaborative - I propose, we refine it together</option>
+                  <option value="direct">Direct - the answer first, then a short explanation</option>
+                </select></div>
+              <div><label for="suLang">Explanation language</label>
+                <input type="text" id="suLang" value="English" maxlength="40" oninput="renderSetup()" /></div>
+            </div>
+            <div><label for="suTopics">Topics you are working on <span class="muted">(optional, one per line)</span></label>
+              <textarea id="suTopics" maxlength="2000" placeholder="e.g. boundary value analysis" oninput="renderSetup()"></textarea></div>
+            <div><label for="suPrefs">Preferences <span class="muted">(optional, one per line)</span></label>
+              <textarea id="suPrefs" maxlength="2000" placeholder="e.g. short examples, no analogies" oninput="renderSetup()"></textarea></div>
+          </div>
+          <label class="inline-check" for="suRemember"><input type="checkbox" id="suRemember" onchange="rememberChanged(this.checked)" /><span>Remember my role, time in this role and AI tool on this browser only</span></label>
+          <details class="help"><summary>How your experience changes the help you get</summary>
+            <table>
+              <thead><tr><th>Level</th><th>Time in the role</th><th>The assistant…</th></tr></thead>
+              <tbody>
+                <tr><td><b>Junior</b></td><td>Under 2 years</td><td>Splits the task into small steps, asks you to predict or propose one idea at a time, and explains terms with concrete examples.</td></tr>
+                <tr><td><b>Intermediate</b></td><td>2 to under 4 years</td><td>Asks for your approach and why, then discusses edge cases and alternatives.</td></tr>
+                <tr><td><b>Upper intermediate</b></td><td>4 to under 7 years</td><td>Asks for alternatives, constraints and how you would check the result.</td></tr>
+                <tr><td><b>Senior</b></td><td>7 years or more</td><td>Works as a critical peer: short answers, explicit about assumptions and risks.</td></tr>
+              </tbody>
+            </table>
+            <p class="muted">Your time in the role is only the starting point. The mentor records each topic as new, learning or independent and adapts per topic. Say "show me" at any time to get the answer straight away.</p>
+          </details>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">2 · Your files</h3>
+          <div class="setup-download">
+            <button class="primary" id="suBothDl" onclick="downloadSetupFiles()">Download both files</button>
+            <span class="muted">If your browser asks, allow it to download two files.</span>
+          </div>
+          <div class="cfgh setup-file">
+            <b>Profile</b> <span class="muted"><code>.mentor/profile.md</code> · personal</span>
+            <div class="cfgbtns">
+              <button id="suProfileCopy" title="Copy" aria-label="Copy the profile" onclick="copyText(document.getElementById('suProfileOut').textContent,this)">Copy</button>
+              <button id="suProfileDl" title="Download" aria-label="Download the profile" onclick="downloadText('profile.md', document.getElementById('suProfileOut').textContent, 'text/markdown')">Download</button>
+            </div>
+          </div>
+          <details class="preview"><summary>Preview the profile</summary><pre data-nocopy><code id="suProfileOut"></code></pre></details>
+          <div class="cfgh setup-file">
+            <b>Mentor</b> <span class="muted"><code id="suAgentPath">.github/agents/mentor.agent.md</code> · the same for everyone</span>
+            <div class="cfgbtns">
+              <button title="Copy" aria-label="Copy the mentor file" onclick="copyText(document.getElementById('suAgentOut').textContent,this)">Copy</button>
+              <button title="Download" aria-label="Download the mentor file" onclick="downloadMentor()">Download</button>
+            </div>
+          </div>
+          <details class="preview"><summary>Preview the mentor file</summary><pre data-nocopy><code id="suAgentOut"></code></pre></details>
+          <p class="muted">The mentor creates <code>.mentor/progress.json</code> the first time you say "save progress", and shows you every change before saving it.</p>
+          <p class="muted profile-use"><b>Where your profile is used:</b> the Mentor, and every agent, skill and prompt made in Explore and Create, read <code>.mentor/profile.md</code> and <code>.mentor/progress.json</code> when they exist and adapt their explanations. Without them, they answer normally.</p>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">3 · Install in <span data-tool-label>GitHub Copilot</span></h3>
+          <p class="muted">Using another tool? Change <button type="button" class="linkbtn" onclick="document.getElementById('userTool').focus()">I write with</button> at the top.</p>
+          <p class="callout nontech">Not using an AI coding assistant yourself? Skip this step: Explore and Create work in the browser.</p>
+          <div class="builder-perspective" data-for-tool="copilot"><label for="suIde">My editor</label>
+            <select id="suIde" onchange="renderSetupIde()">
+              <option value="vscode">VS Code</option>
+              <option value="intellij">IntelliJ IDEA (GitHub Copilot plugin)</option>
+            </select>
+          </div>
+          <fieldset class="install-for"><legend>Install for</legend>
+            <label class="inline-check" for="suInstallMe"><input type="radio" name="suInstall" id="suInstallMe" value="me" checked onchange="renderSetupCommands()" /><span>Just me <span class="muted">(recommended)</span></span></label>
+            <label class="inline-check" for="suInstallTeam"><input type="radio" name="suInstall" id="suInstallTeam" value="team" onchange="renderSetupCommands()" /><span>My whole team <span class="muted">(agree with them first)</span></span></label>
+          </fieldset>
+          <ol class="steps">
+            <li><b>Put the files in your repository.</b> From the repository root, run the commands for your system. They create the folders, move the downloads and keep files out of Git as chosen above. They stop rather than overwrite files that already exist.
+              <div class="cfgh cmd-head"><b>Windows PowerShell</b>
+                <div class="cfgbtns"><button title="Copy" aria-label="Copy the PowerShell commands" onclick="copyText(document.getElementById('suCmdPs').textContent,this)">Copy</button></div></div>
+              <pre><code id="suCmdPs"></code></pre>
+              <div class="cfgh cmd-head"><b>macOS or Linux</b>
+                <div class="cfgbtns"><button title="Copy" aria-label="Copy the macOS or Linux commands" onclick="copyText(document.getElementById('suCmdSh').textContent,this)">Copy</button></div></div>
+              <pre><code id="suCmdSh"></code></pre>
+              <p class="muted" id="suInstallNote"></p>
+              <p class="muted">If your browser saved the files elsewhere or renamed them, change the paths.</p>
+            </li>
+            <li data-ide="vscode"><b>Approve every change to your profile.</b> Run <b>Preferences: Open User Settings (JSON)</b> and add the rule below. If the setting already exists, add only the <code>.mentor</code> line. VS Code then shows each change to <code>.mentor/</code> and waits for your approval. Keep the chat on <b>Manual permissions</b>: <b>Allow all</b> and <b>Autopilot</b> skip approvals.
+              <div class="cfgh cmd-head"><b>User settings (JSON)</b>
+                <div class="cfgbtns"><button title="Copy" aria-label="Copy the VS Code setting" onclick="copyText(document.getElementById('suVsSetting').textContent,this)">Copy</button></div></div>
+              <pre><code id="suVsSetting">"chat.tools.edits.autoApprove": {
+  "**/.mentor/**": false
+}</code></pre>
+            </li>
+            <li data-ide="vscode"><b>Start a session.</b> In Copilot Chat, choose <b>Mentor</b> from the agents list and say what you are working on. Say <b>save progress</b> when you finish.</li>
+            <li data-ide="vscode"><b>Optional: use it in every repository.</b> Save <code>mentor.agent.md</code> in <code>~/.copilot/agents/</code> instead. Each repository still keeps its own <code>.mentor/</code> folder.</li>
+            <li data-ide="intellij" hidden><b>Update the plugin.</b> Custom agents need a recent GitHub Copilot plugin (<b>Settings › Plugins</b>), and some customizations are still in preview. On Copilot Business or Enterprise, an administrator may need to enable preview features.</li>
+            <li data-ide="intellij" hidden><b>Approve every change to your profile.</b> In <b>Settings › GitHub Copilot › Chat › Auto Approve</b>, keep <b>Global Auto Approve</b> and <b>Auto-approve file edits not covered by rules</b> turned off, and do not add a rule that approves <code>.mentor/</code>. Copilot then asks you before it saves changes to your profile.</li>
+            <li data-ide="intellij" hidden><b>Start a session.</b> In GitHub Copilot Chat, choose <b>Mentor</b> from the agents list and say what you are working on. Say <b>save progress</b> when you finish. To change the agent later, use <b>Configure Agents…</b> in the same list.</li>
+            <li data-for-tool="claude" hidden><b>Approve every change to your profile.</b> Keep Claude Code in its default permission mode, which asks before each file edit, and do not add an allow rule for <code>.mentor/</code>. <b>Accept edits</b> and <b>bypass permissions</b> skip approvals.</li>
+            <li data-for-tool="claude" hidden><b>Start a session.</b> From the repository root, run <code>claude --agent mentor</code> and say what you are working on. Say <b>save progress</b> when you finish.</li>
+            <li data-for-tool="claude" hidden><b>Optional: use it in every repository.</b> Save <code>mentor.md</code> in <code>~/.claude/agents/</code> instead. Each repository still keeps its own <code>.mentor/</code> folder.</li>
+            <li data-for-tool="codex" hidden><b>Approve every change to your profile.</b> Start Codex with <code>codex --sandbox read-only --ask-for-approval on-request</code>, or choose <b>Read Only</b> in <code>/permissions</code>. Codex then asks before it writes your profile; in <b>Auto</b> it edits workspace files without asking.</li>
+            <li data-for-tool="codex" hidden><b>Start a session.</b> Type <code>$mentor</code> and say what you are working on. Say <b>save progress</b> when you finish.</li>
+            <li data-for-tool="codex" hidden><b>Optional: use it in every repository.</b> Save the skill as <code>~/.agents/skills/mentor/SKILL.md</code> instead. Each repository still keeps its own <code>.mentor/</code> folder.</li>
+          </ol>
+          <div class="callout"><b>Instructions are not enforcement.</b> "Edit only <code>.mentor/</code>" is a request to the model. The approval setting above is what makes your assistant ask you first.</div>
+        </div>
+        <div class="setup-done"><button class="primary" onclick="go('custom');paintNeed(true)">Done - start exploring &#8594;</button></div>
+      </section>
+</main>
+<footer>Runs in your browser. Answers are not stored or sent, except your role, time in this role and assistant if you tick "Remember on this browser only". Copy and download are explicit actions. Hosting providers may log page requests. Nothing here enforces permissions or runs an AI model.</footer>
+<dialog id="aboutDialog" class="about" aria-labelledby="aboutTitle">
+  <div class="about-inner">
+    <div class="about-head">
+      <h2 id="aboutTitle">About Agent Lab</h2>
+      <button type="button" class="about-x" aria-label="Close" title="Close" onclick="closeAbout()">&times;</button>
+    </div>
+    <div class="about-body">
+      <h3>What it is</h3>
+      <p>Agent Lab helps you turn a task that keeps costing you time into something your AI coding assistant can do for you: GitHub Copilot, Claude Code or OpenAI Codex. It tells you what to build and writes the files in that assistant's format. No AI runs on this page: it asks you questions and fills in tested templates.</p>
+      <h3>What it can make</h3>
+      <ul>
+        <li><b>Prompt</b>: a shortcut for a request you keep retyping.</li>
+        <li><b>Skill</b>: fixed steps, followed the same way every time.</li>
+        <li><b>Agent</b>: weighs evidence from several places, then concludes.</li>
+        <li><b>Subagent</b>: fetches one specific thing for an agent.</li>
+      </ul>
+      <h3>How to use it</h3>
+      <ol>
+        <li><b>Choose your role and your assistant</b> at the top. The examples, the documents and the file formats follow them.</li>
+        <li><b>Explore</b>: answer eight short questions about the task, including the tools it involves and which ones the assistant can reach through MCP. You get a recommendation and, for a bigger request, a plan in small pieces.</li>
+        <li><b>Create</b>: finish the result. Pick the files to save in your repository, a brief for whoever builds it, or an approval record, then copy or download it.</li>
+        <li><b>Setup</b> (optional): describe your role and experience, so your assistant explains things at your level, and install the Mentor.</li>
+      </ol>
+      <h3>Your data</h3>
+      <p>Your answers stay in this browser tab and are not sent anywhere. The page remembers your role, time in role and assistant only if you tick "Remember on this browser only". The files you download do not report anything back.</p>
+    </div>
+    <div class="about-actions"><button type="button" class="primary" onclick="closeAbout()">Close</button></div>
+  </div>
+</dialog>
+</body>
+</html>
